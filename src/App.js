@@ -9,19 +9,34 @@ function App() {
 
   const addTransaction = (e) => {
     e.preventDefault();
+  
     // Check if the transaction type is credit and the performedBy is not Pawan
     if (form.type === 'credit' && form.performedBy !== 'Pawan') {
       alert("Only Pawan can perform credit transactions."); // Alert the user
       return; // Prevent the transaction from being added
     }
-    
+  
+    // Calculate the current total balance
+    const currentTotal = transactions.reduce((acc, transaction) =>
+      transaction.type === 'credit' ? acc + transaction.amount : acc - transaction.amount,
+      0
+    );
+  
+    // Check if it's a debit transaction and if there are sufficient funds
+    if (form.type === 'debit' && currentTotal < parseFloat(form.amount)) {
+      alert("Insufficient balance for this debit transaction."); // Alert the user
+      return; // Prevent the transaction from being added
+    }
+  
     setTransactions([
       ...transactions,
       { ...form, amount: parseFloat(form.amount), id: transactions.length }
     ]);
-    
-    setForm({ type: 'credit', amount: '', performedBy: 'Pawan' }); // Reset form after submission
+  
+    // Reset form after submission
+    setForm({ type: 'credit', amount: '', performedBy: 'Pawan' });
   };
+  
   
 
   const handleInputChange = (e) => {
