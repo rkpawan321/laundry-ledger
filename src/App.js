@@ -1,266 +1,160 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
+import { db } from './firebase';
 
 function App() {
   const [transactions, setTransactions] = useState([]);
-  const [form, setForm] = useState({ type: 'credit', amount: '', performedBy: 'Pawan' });
+  const [balances, setBalances] = useState({});
+  const [form, setForm] = useState({
+    transactionType: 'credit', // 'credit' or 'debit'
+    amount: '',
+    personName: 'Pawan', // Default to 'Pawan'
+  });
+  
+  const currentUser = 'Pawan'; // Placeholder for actual authentication logic
 
-  const participants = ['Pawan', 'Peter', 'Sravan', 'Harshit'];
+  useEffect(() => {
+    // Fetch transactions from Firestore on component mount
+    const unsubscribeTransactions = db.collection('laundryTransactions')
+      .onSnapshot(snapshot => {
+        const transactionsData = snapshot.docs.map(doc => ({
+          ...doc.data(),
+          id: doc.id,
+        }));
+        setTransactions(transactionsData);
+      });
 
-  const addTransaction = (e) => {
-    e.preventDefault();
-  
-    // Check if the transaction type is credit and the performedBy is not Pawan
-    if (form.type === 'credit' && form.performedBy !== 'Pawan') {
-      alert("Only Pawan can perform credit transactions."); // Alert the user
-      return; // Prevent the transaction from being added
-    }
-  
-    // Calculate the current total balance
-    const currentTotal = transactions.reduce((acc, transaction) =>
-      transaction.type === 'credit' ? acc + transaction.amount : acc - transaction.amount,
-      0
-    );
-  
-    // Check if it's a debit transaction and if there are sufficient funds
-    if (form.type === 'debit' && currentTotal < parseFloat(form.amount)) {
-      alert("Insufficient balance for this debit transaction."); // Alert the user
-      return; // Prevent the transaction from being added
-    }
-  
-    setTransactions([
-      ...transactions,
-      { ...form, amount: parseFloat(form.amount), id: transactions.length }
-    ]);
-  
-    // Reset form after submission
-    setForm({ type: 'credit', amount: '', performedBy: 'Pawan' });
-  };
-  
-  
-
-  const handleInputChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const calculateTotal = () => {
-    return transactions.reduce(
-      (acc, transaction) =>
-        transaction.type === 'credit' ? acc + transaction.amount : acc - transaction.amount,
-      0
-    );
-  };
-
-  const calculateBalances = () => {
-    const initialBalances = participants.reduce((acc, person) => ({ ...acc, [person]: 0 }), {});
-  
-    transactions.forEach(transaction => {
-      if (transaction.type === 'credit') {
-        initialBalances[transaction.performedBy] += transaction.amount;
-      } else if (transaction.type === 'debit' && transaction.performedBy !== 'Pawan') {
-        initialBalances[transaction.performedBy] -= transaction.amount;
+    // Fetch and set balances from Firestore `balanceSheet` document
+    const docRef = db.collection('balanceSheet').doc('vF0tW13zirjPaF93Lg0P');
+    const unsubscribeBalanceSheet = docRef.onSnapshot(doc => {
+      if (doc.exists) {
+        setBalances(doc.data());
       }
     });
-  
-    // If Pawan is the only one who debited or if no debits occurred, set Pawan's balance to zero
-    const debitTransactions = transactions.filter(t => t.type === 'debit');
-    if (debitTransactions.length === 0 || (debitTransactions.length === 1 && debitTransactions[0].performedBy === 'Pawan')) {
-      initialBalances['Pawan'] = 0;
+
+    return () => {
+      unsubscribeTransactions();
+      unsubscribeBalanceSheet();
+    };
+  }, []);
+
+  const addTransaction = async (e) => {
+    e.preventDefault();
+    const { transactionType, amount, personName } = form;
+
+    if (transactionType === 'credit' && personName !== 'Pawan') {
+      alert("Only Pawan can perform credit transactions.");
+      return;
     }
-  
-    return initialBalances;
+
+    if (transactionType === 'debit') {
+      console.log(JSON.stringify(transactions, 2))
+      // const currentBalance = Object.values(transactions).reduce((acc, value) => acc + value, 0); 
+      const currentBalance = transactions[0].amount;
+      console.log('PAWAN', {currentBalance, amount, balances })
+      if (parseFloat(amount) > currentBalance) {
+        alert("Debit amount exceeds current balance.");
+        return;
+      }
+    }
+
+    try {
+      await db.collection('laundryTransactions').add({
+        transactionType,
+        amount: parseFloat(amount),
+        personName,
+        creationDate: new Date(),
+      });
+      alert('Transaction added successfully');
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      alert('Failed to add transaction');
+    }
   };
 
-  // Adjusting the calculateOwes function
-const calculateOwes = (balances) => {
-  let owes = participants.reduce((acc, person) => ({ ...acc, [person]: {} }), {});
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+  };
 
-  participants.forEach(person => {
-    if (balances[person] < 0) { // If the person's balance is negative, they owe money
-      participants.forEach(owedPerson => {
-        if (person !== owedPerson && balances[owedPerson] > 0) {
-          // If the owedPerson has a positive balance and is not Pawan, calculate the owed amount
-          if (owedPerson !== 'Pawan' || person !== 'Pawan') {
-            const amountOwed = Math.min(balances[owedPerson], -balances[person]);
-            if (amountOwed > 0) {
-              owes[person][owedPerson] = amountOwed.toFixed(2);
-            }
-          }
-        }
+  const settlePayment = async (personName) => {
+    if (currentUser !== 'Pawan') {
+      alert("Only Pawan can settle payments.");
+      return;
+    }
+
+    try {
+      await db.collection('balanceSheet').doc('yourDocumentId').update({
+        [`${personName.toLowerCase()}Owes`]: 0,
+        // Update other necessary fields or logic as per your requirement
       });
+      alert(`${personName}'s payment has been settled.`);
+    } catch (error) {
+      console.error('Error settling payment:', error);
+      alert('Failed to settle payment.');
     }
-  });
+  };
 
-  return owes;
-};
-
-
-const downloadCSV = () => {
-  const csvRows = [
-    ['Type', 'Amount', 'Performed By'], // headers
-    ...transactions.map(t => [t.type, t.amount, t.performedBy])
-  ];
-
-  const csvString = csvRows.map(e => e.join(',')).join('\n');
-  const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-  
-  // Create a link and trigger the download
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.setAttribute('download', 'transaction_history.csv');
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
-
-const sendEmailWithCSV = async () => {
-  const csvRows = [
-    ['Type', 'Amount', 'Performed By'], // headers
-    ...transactions.map(t => [t.type, t.amount, t.performedBy])
-  ];
-  const csvString = csvRows.map(e => e.join(',')).join('\n');
-
-  try {
-    const response = await fetch('YOUR_SERVER_ENDPOINT', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ csv: csvString, email: 'rkpawan321@gmail.com' })
-    });
-
-    if (response.ok) {
-      alert('Email sent successfully.');
-    } else {
-      alert('Failed to send email.');
-    }
-  } catch (error) {
-    alert('Error sending email.');
-    console.error('There was an error!', error);
-  }
-};
-
-
-
-  const totalBalance = calculateTotal();
-  const balances = calculateBalances();
-  const owes = calculateOwes(balances);
-
-  // return (
-    // <div className="App">
-    //   <h1>Laundry Expense Tracker</h1>
-    //   <form onSubmit={addTransaction}>
-    //     <select name="type" value={form.type} onChange={handleInputChange}>
-    //       <option value="credit">Credit</option>
-    //       <option value="debit">Debit</option>
-    //     </select>
-    //     <input type="number" name="amount" placeholder="Amount ($)" value={form.amount} onChange={handleInputChange} required />
-    //     <select name="performedBy" value={form.performedBy} onChange={handleInputChange}>
-    //       <option value="Pawan">Pawan</option>
-    //       <option value="Peter">Peter</option>
-    //       <option value="Sravan">Sravan</option>
-    //       <option value="Harshit">Harshit</option>
-    //     </select>
-    //     <button type="submit">Add Transaction</button>
-    //   </form>
-  
-
-   
-
-
-
-return (
-<>
-  <div className="app">
-
-
-
-    <header className="header">
+  return (
+    <div className="app">
       <h1>Laundry Expense Tracker</h1>
-    </header>
-
-
-    <div className="form-container">
       <form onSubmit={addTransaction} className="transaction-form">
-        <select name="type" value={form.type} onChange={handleInputChange} className="input-field">
-          <option value="credit">Credit</option>
-          <option value="debit">Debit</option>
-        </select>
-        <input type="number" name="amount" placeholder="Amount ($)" value={form.amount} onChange={handleInputChange} required className="input-field" />
-        <select name="performedBy" value={form.performedBy} onChange={handleInputChange} className="input-field">
+        <input
+          className="input-field"
+          name="amount"
+          type="number"
+          placeholder="Amount"
+          value={form.amount}
+          onChange={handleInputChange}
+          required
+        />
+        <select
+          className="input-field"
+          name="personName"
+          value={form.personName}
+          onChange={handleInputChange}
+          required
+        >
           <option value="Pawan">Pawan</option>
           <option value="Peter">Peter</option>
           <option value="Sravan">Sravan</option>
           <option value="Harshit">Harshit</option>
         </select>
+        <select
+          className="input-field"
+          name="transactionType"
+          value={form.transactionType}
+          onChange={handleInputChange}
+          required
+        >
+          <option value="credit">Credit</option>
+          <option value="debit">Debit</option>
+        </select>
         <button type="submit" className="submit-btn">Add Transaction</button>
       </form>
+      <div className="transactions-list">
+        <h2>Transactions</h2>
+        <ul>
+          {transactions.map(({ id, amount, personName, transactionType }) => (
+            <li key={id}>
+              {`${personName} did a ${transactionType} of $${parseFloat(amount).toFixed(2)}`}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="balance-sheet">
+        <h2>Balance Sheet</h2>
+        {Object.entries(balances).map(([key, value]) => (
+          key.endsWith('Owes') && value > 0 && currentUser === 'Pawan' ? (
+            <div key={key}>
+              <p>{`${key.replace('Owes', '')} owes $${value.toFixed(2)} to Pawan`}</p>
+              <button onClick={() => settlePayment(key.replace('Owes', ''))}>Settle Payment</button>
+            </div>
+          ) : null
+        ))}
+      </div>
     </div>
-
-
-
-
-
-   {/* Display the total balance */}
-   <h3>Total Balance: ${totalBalance.toFixed(2)}</h3>
-
-{/* Display who owes whom */}
-<h2>Balance Sheet</h2>
-<div>
-{participants.map(person => (
-balances[person] > 0 ? (
-<div key={person}>
-<p>{person} gets back ${balances[person].toFixed(2)} in total.</p>
-<ul>
-  {Object.entries(owes).flatMap(([debtor, debt]) =>
-    debt[person] ? (
-      <li key={debtor}>
-        {debtor} owes ${debt[person]} to {person}
-      </li>
-    ) : []
-  )}
-</ul>
-</div>
-) : null
-))}
-</div>
-
-
-{/* Transaction History Table */}
-<div>
-<h2>Transaction History</h2>
-<table>
-<thead>
-<tr>
-  <th>Type</th>
-  <th>Amount ($)</th>
-  <th>Performed By</th>
-</tr>
-</thead>
-<tbody>
-{transactions.map((transaction, index) => (
-  <tr key={index}>
-    <td>{transaction.type}</td>
-    <td>{transaction.amount.toFixed(2)}</td>
-    <td>{transaction.performedBy}</td>
-  </tr>
-))}
-</tbody>
-</table>
-</div>
-
-
-<div className="buttons-container">
-      <button onClick={downloadCSV} className="button">Download CSV</button>
-      <button onClick={sendEmailWithCSV} className="button">Send Email</button>
-</div>
-
-
-</div>
-
-
-</>
-);
+  );
 }
 
 export default App;
