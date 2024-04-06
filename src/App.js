@@ -219,7 +219,7 @@ function App() {
           if (collectionName === 'balanceSheet') {
             // Set default values or structure for the balanceSheet document
             // Adjust the document ID and default values as necessary
-            await db.collection(collectionName).doc('yourDocumentId').set({
+            await db.collection(collectionName).doc('vF0tW13zirjPaF93Lg0P').set({
               pawanGetsBack: 0,
               harshitOwes: 0,
               sravanOwes: 0,
