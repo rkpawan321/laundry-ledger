@@ -143,6 +143,29 @@ function App() {
       alert("Only Pawan can settle payments.");
       return;
     }
+
+
+    if (currentUser !== 'Pawan') {
+      alert("Only Pawan can settle payments.");
+      return;
+    }
+    
+    // Prompt for the passcode
+    const passcode = prompt("Enter the 4-digit passcode to settle payment:");
+    
+    // Check if the entered passcode matches the expected one
+    // For this example, let's assume the passcode is '1234'
+    if (passcode !== '6969') {
+      alert("Incorrect passcode. Payment settlement aborted.");
+      return;
+    }
+  
+    // Proceed with settling the payment if the passcode is correct
+    // This is where you'd include the logic to update the Firestore document
+    // console.log(`Settling payment for ${personName}`);
+
+
+
   
     const owedAmount = balances[`${personName.toLowerCase()}Owes`];
     try {
