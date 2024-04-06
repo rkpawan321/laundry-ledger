@@ -214,6 +214,19 @@ function App() {
   <h2>Current Balance: ${calculateCurrentBalance().toFixed(2)}</h2>
 </div>}
 
+
+{balances.pawanGetsBack > 0 && <div className="balance-sheet">
+        <h2>Balance Sheet</h2>
+        {Object.entries(balances).map(([key, value]) => (
+          key.endsWith('Owes') && value > 0 && currentUser === 'Pawan' ? (
+            <div key={key} className="balance-entry">
+              <p>{`${key.replace('Owes', '')} owes $${value.toFixed(2)} to Pawan`}</p>
+              <button onClick={() => settlePayment(key.replace('Owes', ''))} className="settle-btn">Settle</button>
+            </div>
+          ) : null
+        ))}
+      </div>}
+
       <div className="transactions-list">
         <h2>Transactions</h2>
         <ul>
@@ -225,18 +238,6 @@ function App() {
         </ul>
       </div>
 
-
- {balances.pawanGetsBack > 0 && <div className="balance-sheet">
-        <h2>Balance Sheet</h2>
-        {Object.entries(balances).map(([key, value]) => (
-          key.endsWith('Owes') && value > 0 && currentUser === 'Pawan' ? (
-            <div key={key} className="balance-entry">
-              <p>{`${key.replace('Owes', '')} owes $${value.toFixed(2)} to Pawan`}</p>
-              <button onClick={() => settlePayment(key.replace('Owes', ''))} className="settle-btn">Settle</button>
-            </div>
-          ) : null
-        ))}
-      </div>}
     </div>
   );
 }
