@@ -243,7 +243,7 @@ function App() {
         {Object.entries(balances).map(([key, value]) => (
           key.endsWith('Owes') && value > 0 && currentUser === 'Pawan' ? (
             <div key={key} className="balance-entry">
-              <p>{`${key.replace('Owes', '')} owes $${value.toFixed(2)} to Pawan`}</p>
+              <p>{`${key.replace('Owes', '')} owes $${value.toFixed(2)} to ${currentUser}`}</p>
               <button onClick={() => settlePayment(key.replace('Owes', ''))} className="settle-btn">Settle</button>
             </div>
           ) : null
