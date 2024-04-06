@@ -209,6 +209,11 @@ function App() {
         </select>
         <button type="submit" className="submit-btn">Add Transaction</button>
       </form>
+
+      {calculateCurrentBalance() >= 0 && <div className="current-balance" style={{color: calculateCurrentBalance() <= 0 ? "red" : "blue"}}>
+  <h2>Current Balance: ${calculateCurrentBalance().toFixed(2)}</h2>
+</div>}
+
       <div className="transactions-list">
         <h2>Transactions</h2>
         <ul>
@@ -220,10 +225,6 @@ function App() {
         </ul>
       </div>
 
-     {calculateCurrentBalance() >= 0 && <div className="current-balance" style={{color: calculateCurrentBalance() <= 0 ? "red" : "blue"}}>
-  <h2>Current Balance: ${calculateCurrentBalance().toFixed(2)}</h2>
-</div>}
-
 
  {balances.pawanGetsBack > 0 && <div className="balance-sheet">
         <h2>Balance Sheet</h2>
@@ -231,7 +232,7 @@ function App() {
           key.endsWith('Owes') && value > 0 && currentUser === 'Pawan' ? (
             <div key={key} className="balance-entry">
               <p>{`${key.replace('Owes', '')} owes $${value.toFixed(2)} to Pawan`}</p>
-              <button onClick={() => settlePayment(key.replace('Owes', ''))} className="settle-btn">Settle Payment</button>
+              <button onClick={() => settlePayment(key.replace('Owes', ''))} className="settle-btn">Settle</button>
             </div>
           ) : null
         ))}
