@@ -192,6 +192,51 @@ function App() {
     });
     return balance;
   };
+
+  const resetDatabase = async () => {
+    const passcode = prompt("Enter the 10-digit passcode to reset database:");
+    if (passcode !== '9481765927') {
+      alert("Incorrect passcode. RESET aborted.");
+      return;
+    }
+    if (window.confirm("Are you sure you want to reset the database? This action cannot be undone.")) {
+      // List of collection names to reset
+      const collectionsToReset = ['laundryTransactions', 'balanceSheet'];
+  
+      try {
+        // Iterate over each collection
+        for (const collectionName of collectionsToReset) {
+          const snapshot = await db.collection(collectionName).get();
+          
+          // Create a batch to delete documents
+          const batch = db.batch();
+          snapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+          });
+          await batch.commit();
+  
+          // For 'balanceSheet', you might want to set default values instead of deleting
+          if (collectionName === 'balanceSheet') {
+            // Set default values or structure for the balanceSheet document
+            // Adjust the document ID and default values as necessary
+            await db.collection(collectionName).doc('yourDocumentId').set({
+              pawanGetsBack: 0,
+              harshitOwes: 0,
+              sravanOwes: 0,
+              peterOwes: 0,
+              pawanOwes: 0,
+            });
+          }
+        }
+  
+        alert("Database has been reset.");
+      } catch (error) {
+        console.error("Error resetting the database: ", error);
+        alert("Failed to reset the database.");
+      }
+    }
+  };
+  
   
   console.log('PAWWW', balances)
 
@@ -260,6 +305,11 @@ function App() {
           ))}
         </ul>
       </div>
+
+
+     
+    <button onClick={resetDatabase} className="reset-database-btn"> Factory Reset </button>
+
 
     </div>
   );
