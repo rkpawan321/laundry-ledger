@@ -80,3 +80,52 @@ th {
 tr:nth-child(even) {
   background-color: #f9f9f9;
 }
+
+.balance-sheet {
+  background-color: #f7f7f7;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.balance-sheet h2 {
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.balance-sheet > div {
+  background-color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin-bottom: 10px;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.balance-sheet p {
+  margin: 0;
+  color: #333;
+  font-weight: 500;
+}
+
+.settle-btn {
+  background-color: blue; /* Green background */
+  border: none;
+  color: white; /* White text */
+  padding: 10px 20px; /* Some padding */
+  text-align: center; /* Centered text */
+  text-decoration: none;
+  display: inline-block; /* Enable block-level behaviors */
+  font-size: 16px;
+  border-radius: 4px; /* Rounded corners */
+  cursor: pointer; /* Pointer/hand icon */
+  transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+}
+
+.settle-btn:hover {
+  background-color: #45a049; /* Darker shade of green */
+}
+
