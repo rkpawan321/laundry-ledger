@@ -263,6 +263,7 @@ return {
 
   return (
     <div className="app">
+      {!process.env.NODE_ENV || process.env.NODE_ENV === 'development' ? <h1 style={{color: 'red', fontSize: '1rem'}}>IN DEV MODE</h1> : null}
       <h1>Laundry Expense Tracker</h1>
       <form onSubmit={addTransaction} className="transaction-form">
         <input
