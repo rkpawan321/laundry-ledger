@@ -41,6 +41,7 @@ return {
   useEffect(() => {
     // Fetch transactions from Firestore on component mount
     const unsubscribeTransactions = db.collection(getDBCollectionDetails().dbLaundryTransactions)
+    .orderBy("creationDate", "desc") // Order by creationDate in descending order
       .onSnapshot(snapshot => {
         const transactionsData = snapshot.docs.map(doc => ({
           ...doc.data(),
