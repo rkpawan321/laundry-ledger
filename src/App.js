@@ -15,11 +15,32 @@ function App() {
   
   const currentUser = 'Pawan'; // Placeholder for actual authentication logic
 
-  console.log('RK transactions', transactions)
+
+  const getDBCollectionDetails = () => {
+    const isDev = (!process.env.NODE_ENV || process.env.NODE_ENV === 'development');
+
+    if (isDev) {
+return {
+  dbBalanceSheet: 'balanceSheetTest',
+  dbLaundryTransactions: 'laundryTransactionsTest',
+  dbLaundryTransactionsDocument: 'rDLZ8RbIRYedlNjMAQgD',
+  
+}
+    } else {
+      return {
+        dbBalanceSheet: 'balanceSheet',
+        dbLaundryTransactions: 'laundryTransactions',
+        dbLaundryTransactionsDocument: 'vF0tW13zirjPaF93Lg0P',
+      }
+    }
+  }
+
+
+  console.log('RK transactions', getDBCollectionDetails().dbBalanceSheet)
 
   useEffect(() => {
     // Fetch transactions from Firestore on component mount
-    const unsubscribeTransactions = db.collection('laundryTransactions')
+    const unsubscribeTransactions = db.collection(getDBCollectionDetails().dbLaundryTransactions)
       .onSnapshot(snapshot => {
         const transactionsData = snapshot.docs.map(doc => ({
           ...doc.data(),
@@ -30,7 +51,7 @@ function App() {
       });
 
     // Fetch and set balances from Firestore `balanceSheet` document
-    const docRef = db.collection('balanceSheet').doc('vF0tW13zirjPaF93Lg0P');
+    const docRef = db.collection(getDBCollectionDetails().dbBalanceSheet).doc(getDBCollectionDetails().dbLaundryTransactionsDocument);
     const unsubscribeBalanceSheet = docRef.onSnapshot(doc => {
       console.log('PAWAN doc', doc.data())
       if (doc.exists) {
@@ -91,7 +112,7 @@ function App() {
     }
   
     try {
-      await db.collection('laundryTransactions').add({
+      await db.collection(getDBCollectionDetails().dbLaundryTransactions).add({
         transactionType,
         amount: parsedAmount,
         personName,
@@ -106,7 +127,7 @@ function App() {
         newBalances.pawanGetsBack = (newBalances.pawanGetsBack || 0) + parsedAmount;
       }
   
-      await db.collection('balanceSheet').doc('vF0tW13zirjPaF93Lg0P').update(newBalances);
+      await db.collection(getDBCollectionDetails().dbBalanceSheet).doc(getDBCollectionDetails().dbLaundryTransactionsDocument).update(newBalances);
       alert('Transaction added and balances updated successfully');
     } catch (error) {
       console.error('Error adding transaction or updating balances:', error);
@@ -169,7 +190,7 @@ function App() {
   
     const owedAmount = balances[`${personName.toLowerCase()}Owes`];
     try {
-      await db.collection('balanceSheet').doc('vF0tW13zirjPaF93Lg0P').update({
+      await db.collection(getDBCollectionDetails().dbBalanceSheet).doc(getDBCollectionDetails().dbLaundryTransactionsDocument).update({
         [`${personName.toLowerCase()}Owes`]: 0,
         pawanGetsBack: (balances.pawanGetsBack || 0) - owedAmount,
       });
@@ -201,7 +222,7 @@ function App() {
     }
     if (window.confirm("Are you sure you want to reset the database? This action cannot be undone.")) {
       // List of collection names to reset
-      const collectionsToReset = ['laundryTransactions', 'balanceSheet'];
+      const collectionsToReset = [getDBCollectionDetails().dbLaundryTransactions, getDBCollectionDetails().dbBalanceSheet];
   
       try {
         // Iterate over each collection
@@ -216,10 +237,10 @@ function App() {
           await batch.commit();
   
           // For 'balanceSheet', you might want to set default values instead of deleting
-          if (collectionName === 'balanceSheet') {
+          if (collectionName === getDBCollectionDetails().dbBalanceSheet) {
             // Set default values or structure for the balanceSheet document
             // Adjust the document ID and default values as necessary
-            await db.collection(collectionName).doc('vF0tW13zirjPaF93Lg0P').set({
+            await db.collection(collectionName).doc(getDBCollectionDetails().dbLaundryTransactionsDocument).set({
               pawanGetsBack: 0,
               harshitOwes: 0,
               sravanOwes: 0,
@@ -238,7 +259,7 @@ function App() {
   };
   
   
-  console.log('PAWWW', balances)
+  console.log('PAWWW', process.env.NODE_ENV === 'development')
 
   return (
     <div className="app">
