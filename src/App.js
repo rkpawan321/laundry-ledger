@@ -99,19 +99,63 @@ return {
   //   }
   // };
 
+  // const addTransaction = async (e) => {
+  //   e.preventDefault();
+  //   const { transactionType, amount, personName } = form;
+  //   const parsedAmount = parseFloat(amount);
+  
+  //   // Existing checks...
+  //   if ((calculateCurrentBalance() < amount && transactionType === 'debit') || (transactionType === 'credit' && personName !== 'Pawan')) {
+  //     // throw new Error('Invalid user for credit transaction!');
+  //     alert('Invalid action: Please recharge with owner');
+  //     return;
+  //   }
+  
+  //   try {
+  //     await db.collection(getDBCollectionDetails().dbLaundryTransactions).add({
+  //       transactionType,
+  //       amount: parsedAmount,
+  //       personName,
+  //       creationDate: new Date(),
+  //     });
+      
+  //     // Update balances based on the transaction
+  //     const balanceChange = transactionType === 'credit' ? -parsedAmount : parsedAmount;
+  //     const balanceKey = personName.toLowerCase() + 'Owes';
+  //     const newBalances = { ...balances, [balanceKey]: (balances[balanceKey] || 0) + balanceChange };
+  //     if (transactionType === 'debit' && personName !== 'Pawan') {
+  //       newBalances.pawanGetsBack = (newBalances.pawanGetsBack || 0) + parsedAmount;
+  //     }
+  
+  //     await db.collection(getDBCollectionDetails().dbBalanceSheet).doc(getDBCollectionDetails().dbLaundryTransactionsDocument).update(newBalances);
+  //     alert('Transaction added and balances updated successfully');
+  //   } catch (error) {
+  //     console.error('Error adding transaction or updating balances:', error);
+  //     alert('Failed to add transaction or update balances');
+  //   }
+  // };
+  
+
   const addTransaction = async (e) => {
     e.preventDefault();
     const { transactionType, amount, personName } = form;
     const parsedAmount = parseFloat(amount);
   
-    // Existing checks...
+    // Additional checks as previously...
     if ((calculateCurrentBalance() < amount && transactionType === 'debit') || (transactionType === 'credit' && personName !== 'Pawan')) {
-      // throw new Error('Invalid user for credit transaction!');
       alert('Invalid action: Please recharge with owner');
+      return;
+    }
+
+    // Confirmation for adding a transaction
+    const isConfirmed = window.confirm(`Are you sure you want to add a ${transactionType} of $${parsedAmount}? This action cannot be undone.`);
+    if (!isConfirmed) {
+      // If the user cancels, exit the function without adding the transaction
       return;
     }
   
     try {
+      // Assuming getDBCollectionDetails returns the correct collection details
       await db.collection(getDBCollectionDetails().dbLaundryTransactions).add({
         transactionType,
         amount: parsedAmount,
@@ -119,22 +163,22 @@ return {
         creationDate: new Date(),
       });
       
-      // Update balances based on the transaction
+      // Assuming the logic for updating balances is correct and works as intended
       const balanceChange = transactionType === 'credit' ? -parsedAmount : parsedAmount;
       const balanceKey = personName.toLowerCase() + 'Owes';
       const newBalances = { ...balances, [balanceKey]: (balances[balanceKey] || 0) + balanceChange };
       if (transactionType === 'debit' && personName !== 'Pawan') {
         newBalances.pawanGetsBack = (newBalances.pawanGetsBack || 0) + parsedAmount;
       }
-  
+
       await db.collection(getDBCollectionDetails().dbBalanceSheet).doc(getDBCollectionDetails().dbLaundryTransactionsDocument).update(newBalances);
       alert('Transaction added and balances updated successfully');
     } catch (error) {
       console.error('Error adding transaction or updating balances:', error);
       alert('Failed to add transaction or update balances');
     }
-  };
-  
+};
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
