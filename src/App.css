@@ -4,7 +4,6 @@
   margin: 0 auto;
   padding: 20px;
   background-color: #d3e2fa;
-  height: 100vh;
 }
 
 .header {
@@ -156,5 +155,11 @@ tr:nth-child(even) {
 .reset-database-btn:active {
    /* background-color: #c0392b; Darker red when the button is clicked */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Reset shadow to give a "pushed" effect */
+}
+
+.dev-details {
+  margin-top: 10px;
+  color: #5281bbb2;
+  font-size: 12px;
 }
 
