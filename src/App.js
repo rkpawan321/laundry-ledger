@@ -248,6 +248,8 @@ const App = () => {
       </div>
 
       <button onClick={resetDatabase} className="reset-database-btn">Factory Reset</button>
+      <div className='dev-details'>-- Beta version: In development
+      -- Built by RK --</div>
     </div>
   );
 };
