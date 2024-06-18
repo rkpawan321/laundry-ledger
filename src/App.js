@@ -6,6 +6,7 @@ import moment from 'moment';
 const config = {
   names: ['Pawan', 'Peter', 'Sravan', 'Harshit', 'Ruthwik'],
   defaultUser: 'Pawan',
+  undoTimeout: 900000, // 90 seconds in milliseconds
   dbCollections: {
     dev: {
       balanceSheet: 'balanceSheetTest',
@@ -32,6 +33,7 @@ const getDBCollectionDetails = () => {
 const App = () => {
   const [transactions, setTransactions] = useState([]);
   const [balances, setBalances] = useState({});
+  const [lastDebit, setLastDebit] = useState(null);
   const [form, setForm] = useState({
     transactionType: 'debit',
     amount: '',
@@ -49,8 +51,20 @@ const App = () => {
           const transactionsData = snapshot.docs.map(doc => ({
             ...doc.data(),
             id: doc.id,
+            creationDate: doc.data().creationDate.toDate(), // Convert Firestore Timestamp to JavaScript Date
           }));
           setTransactions(transactionsData);
+
+          // Check for last debit transaction
+          const lastDebitTransaction = transactionsData.find(txn => txn.transactionType === 'debit');
+          if (lastDebitTransaction) {
+            const transactionTime = new Date(lastDebitTransaction.creationDate).getTime();
+            const currentTime = new Date().getTime();
+            const timeDifference = currentTime - transactionTime;
+            if (timeDifference < config.undoTimeout) {
+              setLastDebit(lastDebitTransaction);
+            }
+          }
         });
     };
 
@@ -72,6 +86,21 @@ const App = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (lastDebit) {
+      const interval = setInterval(() => {
+        const transactionTime = new Date(lastDebit.creationDate).getTime();
+        const currentTime = new Date().getTime();
+        const timeDifference = currentTime - transactionTime;
+        if (timeDifference > config.undoTimeout) {
+          setLastDebit(null);
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [lastDebit]);
+
   const addTransaction = async e => {
     e.preventDefault();
     const { transactionType, amount, personName } = form;
@@ -86,12 +115,18 @@ const App = () => {
     if (!isConfirmed) return;
 
     try {
-      await db.collection(getDBCollectionDetails().laundryTransactions).add({
+      const newTransaction = {
         transactionType,
         amount: parsedAmount,
         personName,
         creationDate: new Date(),
-      });
+      };
+
+      const docRef = await db.collection(getDBCollectionDetails().laundryTransactions).add(newTransaction);
+
+      if (transactionType === 'debit') {
+        setLastDebit({ ...newTransaction, id: docRef.id });
+      }
 
       const balanceChange = transactionType === 'credit' ? -parsedAmount : parsedAmount;
       const balanceKey = personName.toLowerCase() + 'Owes';
@@ -105,6 +140,30 @@ const App = () => {
     } catch (error) {
       console.error('Error adding transaction or updating balances:', error);
       alert('Failed to add transaction or update balances');
+    }
+  };
+
+  const undoLastDebit = async () => {
+    if (!lastDebit) {
+      alert('No debit transaction to undo.');
+      return;
+    }
+
+    try {
+      await db.collection(getDBCollectionDetails().laundryTransactions).doc(lastDebit.id).delete();
+
+      const balanceKey = lastDebit.personName.toLowerCase() + 'Owes';
+      const newBalances = { ...balances, [balanceKey]: (balances[balanceKey] || 0) - parseFloat(lastDebit.amount) };
+      if (lastDebit.personName !== currentUser) {
+        newBalances.pawanGetsBack = (newBalances.pawanGetsBack || 0) - parseFloat(lastDebit.amount);
+      }
+
+      await db.collection(getDBCollectionDetails().balanceSheet).doc(getDBCollectionDetails().documentId).update(newBalances);
+      setLastDebit(null);
+      alert('Last debit transaction undone successfully');
+    } catch (error) {
+      console.error('Error undoing the last debit transaction:', error);
+      alert('Failed to undo the last debit transaction');
     }
   };
 
@@ -222,6 +281,13 @@ const App = () => {
         <h2>Current Balance: ${calculateCurrentBalance().toFixed(2)}</h2>
       </div>
 
+      {lastDebit && (
+        <div>
+          <p className="undo-message">World is filled with idiots, you have got {config.undoTimeout / 1000} seconds to undo debit bruh !!</p>
+          <button onClick={undoLastDebit} className="undo-debit-btn">Undo Last Debit</button>
+        </div>
+      )}
+
       {balances.pawanGetsBack > 0 && (
         <div className="balance-sheet">
           <h2>Balance Sheet</h2>
@@ -241,7 +307,7 @@ const App = () => {
         <ul>
           {transactions.map(({ id, amount, personName, transactionType, creationDate }) => (
             <li key={id}>
-              {`${personName} did a ${transactionType} of $${parseFloat(amount).toFixed(2)} on ${moment(creationDate.seconds * 1000).format('h:mm A, MMM D YYYY')}`}
+              {`${personName} did a ${transactionType} of $${parseFloat(amount).toFixed(2)} on ${moment(creationDate).format('h:mm A, MMM D YYYY')}`}
             </li>
           ))}
         </ul>
