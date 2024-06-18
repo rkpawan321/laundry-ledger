@@ -6,7 +6,7 @@ import moment from 'moment';
 const config = {
   names: ['Pawan', 'Peter', 'Sravan', 'Harshit', 'Ruthwik'],
   defaultUser: 'Pawan',
-  undoTimeout: 5400000, // 90 seconds in milliseconds
+  undoTimeout: 180000, // 90 seconds in milliseconds
   dbCollections: {
     dev: {
       balanceSheet: 'balanceSheetTest',
@@ -283,7 +283,7 @@ const App = () => {
 
       {lastDebit && (
         <div>
-          <p className="undo-message">World is filled with idiots, you have got {config.undoTimeout / 1000} seconds to undo debit bruh !!</p>
+          <p className="undo-message">World is filled with idiots, you have got {(config.undoTimeout / 1000)/ 60} minutes to undo debit bruh !!</p>
           <button onClick={undoLastDebit} className="undo-debit-btn">Undo Last Debit</button>
         </div>
       )}
