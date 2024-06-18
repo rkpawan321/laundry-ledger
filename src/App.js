@@ -283,7 +283,7 @@ const App = () => {
 
       {lastDebit && (
         <div>
-          <p className="undo-message">World is filled with idiots, you have got {config.undoTimeout / 1000} seconds to undo debit bruh !!</p>
+          <p className="undo-message">World is filled with idiots, you have got {(config.undoTimeout / 1000)/ 60} minutes to undo debit bruh !!</p>
           <button onClick={undoLastDebit} className="undo-debit-btn">Undo Last Debit</button>
         </div>
       )}
