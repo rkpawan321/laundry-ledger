@@ -6,7 +6,7 @@ import moment from 'moment';
 const config = {
   names: ['Pawan', 'Peter', 'Sravan', 'Harshit', 'Ruthwik'],
   defaultUser: 'Pawan',
-  undoTimeout: 5400000, // 90 seconds in milliseconds
+  undoTimeout: 180000, // 90 seconds in milliseconds
   dbCollections: {
     dev: {
       balanceSheet: 'balanceSheetTest',
